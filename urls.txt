@@ -1,0 +1,23 @@
+GET :
+
+http://localhost:4000/home_page/
+
+http://localhost:4000/home_page/sensors_home/
+
+http://localhost:4000/home_page/sensors_home/Drew/
+
+POST :
+
+http://localhost:4000/home_page/sensors_home/
+
+PUT :
+
+http://localhost:4000/home_page/sensors_update/Blaine/
+
+http://localhost:4000/home_page/sensors_mesh_update/Blaine/ras/
+
+http://localhost:4000/home_page/update_name/Blaine/
+
+DELETE :
+
+http://localhost:4000/home_page/sensors_home/Pinky/
