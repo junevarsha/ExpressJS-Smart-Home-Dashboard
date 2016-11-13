@@ -17,6 +17,7 @@ var userSchema = mongoose.Schema({
     created_at :{type:Date, default:Date.now},
     sensors: [{
         sensor_name: {type: String, required:true},
+        description: {type: String},
         measurements: [{value:{type:String}, time:{type : Date, default : Date.now }}],
         u_id: {type: String}
     }] 
@@ -83,7 +84,7 @@ res.send({message: "User Info created"});
 router.route('/sensors/:_id/')
 .put(function (req, res) {
 console.log("inside put sensor update")
-User.findOneAndUpdate({_id:req.params._id, sensors: {$nin: [{sensor_name:req.body.sensor_name}]}}, {$push: {"sensors":{sensor_name :req.body.sensor_name, measurements:[], u_id:req.params._id } } },{upsert:true,new:true},function(err, newSensor) {
+User.findOneAndUpdate({_id:req.params._id, sensors: {$nin: [{sensor_name:req.body.sensor_name}]}}, {$push: {"sensors":{sensor_name :req.body.sensor_name, description: req.body.description, measurements:[], u_id:req.params._id } } },{upsert:true,new:true},function(err, newSensor) {
 if (err)
     res.send(err);
 res.send(newSensor)
