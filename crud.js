@@ -1,14 +1,14 @@
 var express = require('express'),
 mongoose = require('mongoose'),
 bodyParser = require('body-parser'),
+jwt = require('jsonwebtoken'),
 port = 4000,
 router = express.Router(),
 app = express(),
 schema = mongoose.Schema;
 app.use(bodyParser());
 mongoose.connect('mongodb://localhost:27017/newSensor');
-
-var ObjectId =  require('mongodb').ObjectId;
+app.set('superSecret', 'secretstring');
 
 //Creating a mongoose schema
 var userSchema = mongoose.Schema({
@@ -30,8 +30,8 @@ var User = mongoose.model('User', userSchema);
 //GET and POST to mongodb
 router.route('/')
 .get(function (req, res) {
-    res.send("Welcome to Express JS App");
-    });
+        res.send("Welcome to Sensor Dashboard")
+});
  
 router.route('/sensors')
 .get(function (req, res) {
@@ -42,14 +42,48 @@ router.route('/sensors')
         });
     });
 
+
 router.route('/sensors/:_id')
 .get(function (req, res) {
         User.findOne({_id : req.params._id} ,function(err, newSensor) {
             if (err)
                 res.send(err);
+            var token = jwt.sign(newSensor, app.get('superSecret'));
+            res.json({
+                message: 'Enjoy your token!',
+                token: token,
+                sensor: newSensor,
+            });
             res.send(newSensor);
         });
     });
+
+router.use(function(req, res, next) {
+    var token = req.body.token
+    if(token){
+    // verifies secret
+    jwt.verify(token, app.get('superSecret'), function(err, decoded) {      
+      if (err) {
+        return res.json({ success: false, message: 'Failed to authenticate token.' });    
+      } else {
+        // if everything is good, save to request for use in other routes
+        req.decoded = decoded;    
+        next();
+      }
+    });
+
+  } else {
+
+    // if there is no token
+    // return an error
+    return res.status(403).send({ 
+        success: false, 
+        message: 'No token provided.' 
+    });
+    
+  }
+});
+
 
 router.route('/recent_sensors/')
 .get(function (req, res) {
@@ -59,6 +93,7 @@ router.route('/recent_sensors/')
         res.send(newSensor);
     });
     });
+
 
 
 // STEP - 1
