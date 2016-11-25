@@ -8,7 +8,7 @@ app = express(),
 schema = mongoose.Schema;
 app.use(bodyParser());
 mongoose.connect('mongodb://localhost:27017/newSensor');
-app.set('superSecret', 'secretstring');
+app.set('superSecret', 'secretString');
 
 //Creating a mongoose schema
 var userSchema = mongoose.Schema({
@@ -48,42 +48,9 @@ router.route('/sensors/:_id')
         User.findOne({_id : req.params._id} ,function(err, newSensor) {
             if (err)
                 res.send(err);
-            var token = jwt.sign(newSensor, app.get('superSecret'));
-            res.json({
-                message: 'Enjoy your token!',
-                token: token,
-                sensor: newSensor,
-            });
             res.send(newSensor);
         });
     });
-
-router.use(function(req, res, next) {
-    var token = req.body.token
-    if(token){
-    // verifies secret
-    jwt.verify(token, app.get('superSecret'), function(err, decoded) {      
-      if (err) {
-        return res.json({ success: false, message: 'Failed to authenticate token.' });    
-      } else {
-        // if everything is good, save to request for use in other routes
-        req.decoded = decoded;    
-        next();
-      }
-    });
-
-  } else {
-
-    // if there is no token
-    // return an error
-    return res.status(403).send({ 
-        success: false, 
-        message: 'No token provided.' 
-    });
-    
-  }
-});
-
 
 router.route('/recent_sensors/')
 .get(function (req, res) {
@@ -94,6 +61,29 @@ router.route('/recent_sensors/')
     });
     });
 
+router.route('/auth/:_id')
+.get(function (req, res){
+console.log("inside auth")
+    User.findOne({
+        _id: req.params._id
+    }, function(err, user) {
+        if (err) throw err;
+        if (user) {
+
+        // if user is found in the database
+        // create a token
+        var token = jwt.sign(user._id, app.get('superSecret'));
+
+        // return the information including token as JSON
+        res.json({
+          success: true,
+          message: 'Enjoy your token!',
+          token: token
+        });
+    }
+
+  });
+});
 
 
 // STEP - 1
@@ -109,35 +99,87 @@ user.name = req.body.name;
 user.save(function(err) {
 if (err)
   res.send(err);
-res.send({message: "User Info created"});
+res.json({
+message: 'User info created!',
+});
+// res.send({message: "User Info created"});
  });
 });
+
 
 // STEP - 2
 // PUT : Update sensors array with sensor name and empty measurments array
 // INPUT : _id and sensor_name
 router.route('/sensors/:_id/')
 .put(function (req, res) {
-console.log("inside put sensor update")
-User.findOneAndUpdate({_id:req.params._id, sensors: {$nin: [{sensor_name:req.body.sensor_name}]}}, {$push: {"sensors":{sensor_name :req.body.sensor_name, description: req.body.description, measurements:[], u_id:req.params._id } } },{upsert:true,new:true},function(err, newSensor) {
-if (err)
-    res.send(err);
-res.send(newSensor)
+var token = req.body.token
+if(token){
+// verifies secret
+    jwt.verify(token, app.get('superSecret'), function(err, decoded) {      
+    if (err) {
+        return res.json({ success: false, message: 'Failed to authenticate token.' });    
+    }
+    else {
+        req.decoded = decoded;   
+        if(req.decoded == req.params._id){
+        // user verified 
+        User.findOneAndUpdate({_id:req.params._id, sensors: {$nin: [{sensor_name:req.body.sensor_name}]}}, {$push: {"sensors":{sensor_name :req.body.sensor_name, description: req.body.description, measurements:[], u_id:req.params._id } } },{upsert:true,new:true},function(err, newSensor) {
+        if (err)
+            res.send(err);
+        res.send(newSensor)
+        });
+        } 
+        else {
+            res.json({ success: false, message: 'Failed to authenticate token.' });
+        }   
+    }
+    });
+} 
+else {
+    return res.status(403).send({ 
+        success: false, 
+        message: 'No token provided.' 
+    });
+}
 });
-});
+
 
 // STEP - 3
 // PUT : Update timestamp and value in the measurements array
 // INPUT : _id, sensor_name and value
 router.route('/sensors/:_id/:sensor_name/')
 .put(function (req, res) {
-console.log("inside put of mesh")
-User.findOneAndUpdate({_id:req.params._id, "sensors.sensor_name":req.params.sensor_name}, {$push: {"sensors.$.measurements": { value:req.body.value } } },function(err, newSensor) {
-if (err)
-    res.send(err);
-res.send(newSensor)
+var token = req.body.token
+if(token){
+// verifies secret
+    jwt.verify(token, app.get('superSecret'), function(err, decoded) {      
+    if (err) {
+        return res.json({ success: false, message: 'Failed to authenticate token.' });    
+    }
+    else {
+        req.decoded = decoded;   
+        if(req.decoded == req.params._id){
+            // user verified 
+            User.findOneAndUpdate({_id:req.params._id, "sensors.sensor_name":req.params.sensor_name}, {$push: {"sensors.$.measurements": { value:req.body.value } } },function(err, newSensor) {
+            if (err)
+                res.send(err);
+            res.send(newSensor)
+            });
+        } 
+        else {
+            res.json({ success: false, message: 'Failed to authenticate token.' });
+        }   
+    }
+    });
+} 
+else {
+    return res.status(403).send({ 
+        success: false, 
+        message: 'No token provided.' 
+    });
+}
 });
-});
+
 
 // STEP - 4
 // PUT : Update name
@@ -154,12 +196,16 @@ res.send(newSensor)
 // DELETE
 router.route('/sensors/:_id')
 .delete(function (req, res) {
+        
+
         User.remove({_id : req.params._id} ,function(err, newSensor) {
             if (err)
                 res.send(err);
             res.send({message: 'Successfully deleted'});
         });
-    });
+
+
+});
 
 app.use('/',router);
 app.listen(port); 
