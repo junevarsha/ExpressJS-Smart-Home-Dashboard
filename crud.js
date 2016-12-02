@@ -4,11 +4,23 @@ bodyParser = require('body-parser'),
 jwt = require('jsonwebtoken'),
 port = 4000,
 router = express.Router(),
+fs = require('fs'),
+http = require('http'),
+https = require('https'),
 app = express(),
 schema = mongoose.Schema;
 app.use(bodyParser());
 mongoose.connect('mongodb://localhost:27017/newSensor');
-app.set('superSecret', 'secretString');
+app.set('superSecret', 'secret');
+
+var pkey = fs.readFileSync('/Users/varsha/Desktop/conf/key.pem');
+var certificate = fs.readFileSync('/Users/varsha/Desktop/conf/cert.pem');
+
+var credentials = {key: pkey, cert: certificate};
+
+var httpServer = http.createServer(app);
+var httpsServer = https.createServer(credentials, app);
+
 
 //Creating a mongoose schema
 var userSchema = mongoose.Schema({
@@ -61,30 +73,6 @@ router.route('/recent_sensors/')
     });
     });
 
-router.route('/auth/:_id')
-.get(function (req, res){
-console.log("inside auth")
-    User.findOne({
-        _id: req.params._id
-    }, function(err, user) {
-        if (err) throw err;
-        if (user) {
-
-        // if user is found in the database
-        // create a token
-        var token = jwt.sign(user._id, app.get('superSecret'));
-
-        // return the information including token as JSON
-        res.json({
-          success: true,
-          message: 'Enjoy your token!',
-          token: token
-        });
-    }
-
-  });
-});
-
 
 // STEP - 1
 // POST : Creating a new user with _id, name and empty sensor array.
@@ -95,12 +83,20 @@ console.log("Posting user id and user name")
 var user = new User();
 user._id = req.body._id;
 user.name = req.body.name;
+var user_dict = {
+"_id":user._id,
+};
+
+var options = { "header": { "typ": "JWT" } };
+var token = jwt.sign(JSON.stringify(user_dict), app.get('superSecret'), options);
+
 //save the info
 user.save(function(err) {
 if (err)
   res.send(err);
 res.json({
 message: 'User info created!',
+token: token
 });
 // res.send({message: "User Info created"});
  });
@@ -120,8 +116,13 @@ if(token){
         return res.json({ success: false, message: 'Failed to authenticate token.' });    
     }
     else {
-        req.decoded = decoded;   
-        if(req.decoded == req.params._id){
+        req.decoded = decoded;
+        console.log(req.decoded) 
+        var user_dict = {
+            "_id":req.params._id,
+        };  
+        console.log(user_dict)
+        if(JSON.stringify(req.decoded) == JSON.stringify(user_dict)){
         // user verified 
         User.findOneAndUpdate({_id:req.params._id, sensors: {$nin: [{sensor_name:req.body.sensor_name}]}}, {$push: {"sensors":{sensor_name :req.body.sensor_name, description: req.body.description, measurements:[], u_id:req.params._id } } },{upsert:true,new:true},function(err, newSensor) {
         if (err)
@@ -208,4 +209,8 @@ router.route('/sensors/:_id')
 });
 
 app.use('/',router);
-app.listen(port); 
+
+httpServer.listen(4001);
+httpsServer.listen(port);
+
+// app.listen(port); 
