@@ -1,23 +1,32 @@
 GET :
 
-http://localhost:4000/home_page/
-
-http://localhost:4000/home_page/sensors_home/
-
-http://localhost:4000/home_page/sensors_home/Drew/
+http://localhost:4000/sensors/
+https://localhost:4000/sensors/<user_id>/
 
 POST :
 
-http://localhost:4000/home_page/sensors_home/
+data = {
+	name
+	_id
+}
+http://localhost:4000/sensors/
 
 PUT :
 
-http://localhost:4000/home_page/sensors_update/Blaine/
+data = {
+	sensor_name
+	description
+	token
+}
+https://localhost:4000/sensors/<user_id>/
 
-http://localhost:4000/home_page/sensors_mesh_update/Blaine/ras/
+data = {
+	value
+	token
+}
+https://localhost:4000/sensors/<user_id>/<sen_name>/
 
-http://localhost:4000/home_page/update_name/Blaine/
 
 DELETE :
 
-http://localhost:4000/home_page/sensors_home/Pinky/
+https://localhost:4000/sensors/<user_id>/
