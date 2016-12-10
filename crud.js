@@ -18,7 +18,7 @@ var credentials = {key: pkey, cert: certificate};
 var httpsServer = https.createServer(credentials, app);
 
 
-//Creating a mongoose schema
+// Creating a mongoose schema
 var userSchema = mongoose.Schema({
     _id: {type: String, required:true},
     name: String,
@@ -31,10 +31,10 @@ var userSchema = mongoose.Schema({
     }] 
 });
 
-// GET
-//Creating a mongoose model for the schema
+// Creating a mongoose model for the schema
 var User = mongoose.model('User', userSchema);
-//GET and POST to mongodb
+
+// GET
 router.route('/')
 .get(function (req, res) {
         res.send("Welcome to Sensor Dashboard")
@@ -69,7 +69,6 @@ router.route('/recent_sensors/')
     });
 
 
-// STEP - 1
 // POST : Creating a new user with _id, name and empty sensor array.
 // INPUT : _id and name
 router.route('/sensors/')
@@ -97,9 +96,8 @@ token: token
 });
 
 
-// STEP - 2
-// PUT : Update sensors array with sensor name and empty measurments array
-// INPUT : _id and sensor_name
+// PUT : Updates the sensor array with sensor name, description and empty measurments array
+// INPUT : sensor_name, description and token
 router.route('/sensors/:_id/')
 .put(function (req, res) {
 var token = req.body.token
@@ -137,9 +135,8 @@ else {
 });
 
 
-// STEP - 3
-// PUT : Update timestamp and value in the measurements array
-// INPUT : _id, sensor_name and value
+// PUT : Updates timestamp and value in the measurements array
+// INPUT : value and token
 router.route('/sensors/:_id/:sensor_name/')
 .put(function (req, res) {
 var token = req.body.token
@@ -176,9 +173,7 @@ else {
 }
 });
 
-
-// STEP - 4
-// PUT : Update name
+// PUT : Updates name
 // INPUT : _id and name
 router.route('/update_name/:_id/')
 .put(function (req, res) {
