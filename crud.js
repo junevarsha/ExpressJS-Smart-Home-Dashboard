@@ -101,7 +101,6 @@ router.route('/recent_sensors/')
 // INPUT : _id and name
 router.route('/sensors/')
     .post(function(req, res) {
-        console.log("Posting user id and user name")
         var user = new User();
         user._id = req.body._id;
         user.name = req.body.name;
